@@ -1,3 +1,7 @@
+/*
+ * TODO: Make into ROS node.
+ */
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -26,22 +30,40 @@ bool set_up_complete = false;
 
 Point3d locate_uav(Mat _in) {
     if(set_up_complete == false) {
-        exit(-1);
+        init_locate_uav();
     }
 
     _p_here.x = 0;
     _p_here.y = 0;
     _p_here.z = 4;
-
+#ifdef DEBUG
+    cout << "Loading input image" << endl;
+	_in = imread("/home/alrekr/Pictures/UAS/frame_194.png", CV_LOAD_IMAGE_GRAYSCALE);
+	cout << "Input image loaded" << endl;
+#endif //DEBUG
     received = get_shapes(_in);
-
+#ifdef DEBUG
+	cout << "Shapes for input image received" << endl;
+	cout << "Contours in input image: " << received.size() << endl;
+#endif //DEBUG
     for(i = 0; i < (int)received.size(); i++) {
+#ifdef DEBUG
+		cout << "Run " << i << " in matching shapes" << endl;
+#endif //DEBUG
+/* FIXME: There's a snake in my boot! */
         matches.push_back(matchShapes(original[ORIGINAL_SHAPE], received[i], CV_CONTOURS_MATCH_I1, 0));
+#ifdef DEBUG
+		cout << "Match " << i << " completed" << endl;
+#endif //DEBUG
     }
-
+#ifdef DEBUG
+	cout << "Found matches, finding lowest number" << endl;
+#endif //DEBUG
     for(i = 0; i < (int)matches.size(); i++) {
         match = matches[i];
-
+#ifdef DEBUG
+        cout << "Match is " << match << endl;
+#endif //DEBUG
         if(lowest > match && match < MATCH_SHAPE_THRESHOLD) {
             lowest = match;
             best_match = i;
@@ -50,7 +72,19 @@ Point3d locate_uav(Mat _in) {
 
     if (lowest != INT_MAX) {
         get_orientation(received, best_match, _p_here);
+        //get_center(received, best_match, _p_here);
+#ifdef DEBUG
+        cout << "Angle is " << rtod(_p_here.z) << endl;
+#endif //DEBUG
     }
+#ifdef DEBUG
+    else {
+        cout << "Best match was " << lowest << endl;
+    }
+#endif //DEBUG
+#ifdef DEBUG
+	cout << "Program is done." << endl;
+#endif //DEBUG
 	return _p_here;
 }
 
@@ -61,13 +95,22 @@ Point3d locate_uav(Mat _in) {
  *****************************************************************************/
 void init_locate_uav(void) {
     Mat src = imread(SAMPLE_IMAGE, CV_LOAD_IMAGE_GRAYSCALE);
-
 	if(!src.data) {
-		cout << "Sample image not loaded. Did you remember to place 'sample.png' in the same folder as uav_locator.cpp?" << endl;
+#ifdef DEBUG
+		cout << "Original image not loaded!!" << endl;
+#endif //DEBUG
 		exit(-2);
 	}
-
+#ifdef DEBUG
+	else {
+		cout << "Original image loaded." << endl;
+	}
+#endif //DEBUG
     original = get_shapes(src);
+#ifdef DEBUG
+	cout << "Shapes in original image identified." << endl;
+	cout << "Contours in original image: " << original.size() << endl;
+#endif //DEBUG
     set_up_complete = true;
 }
 

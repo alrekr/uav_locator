@@ -1,18 +1,19 @@
 # uav_locator
-For locating a UAV. The assumed setup is a camera placed on the ground, looking up in the sky. The program will identify the UAV based on a sample image.
-
-## Prerequisites
-The code is dependant on OpenCV. Built and tested with CMake/GCC using Atom on Ubuntu 14.04.
-
-## Technical
-Tested to perform at at least 30 FPS.
+For locating a UAV.
 
 ## Usage
 
-1.  Place [uav_locator.hpp] and [uav_locator.cpp] in the same folder. Place a sample image in the same folder, name it [sample.png]. This sample image *must* be a black profile image of the UAV to identify with a white background, as it is to be used for identifying a UAV.
+1.  Place uav_locator.hpp and uav_locator.cpp in the same folder. Place a sample
+    image in the same folder, name it sample.png. This sample image *must* be a
+    black profile image of the UAV to identify with a white background.
 
-2.  Include [uav_locator.hpp] in main project.
+2.  Include uav_locator.hpp in main project.
 
-3.  Run function 'init_uav_locator()' *before* doing anything else regarding 'uav_locator()'! The program *will* fail silently/with exit code -1 if you neglect to run 'init_uav_locator()'!
+3.  Run function init_uav_locator() *before* doing anything else regarding
+    uav_locator! The program *will* fail silently/with exit code -1!
 
-4.  Call 'uav_locator()' with a Mat image as argument. The function will return an object of type cv::Point3d containing contour mass center x and y coordinates and angle in radians (-pi to pi). Repeat "ad nauseam". 
+4.  Call uav_locator() with a Mat image as argument. The function will return
+    a custom struct, p3d, containing contour mass center x and y coordinates,
+    angle in radians (-pi to pi), and (if implemented by the user) the
+    approximate size.
+    Repeat "ad nauseam".

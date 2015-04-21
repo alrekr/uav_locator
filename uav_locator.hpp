@@ -9,7 +9,6 @@ void prepare_mat(cv::Mat&);
 void erode_dilate(cv::Mat&);
 std::vector<std::vector<cv::Point> > get_shapes(cv::Mat);
 void get_orientation(std::vector<std::vector<cv::Point> >, int, cv::Point3d&);
-//void get_center(std::vector<std::vector<cv::Point> >, int, cv::Point3d&);
 double rtod(double);
 double dtor(double);
 
