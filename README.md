@@ -1,5 +1,5 @@
 # uav_locator
-For locating a UAV.
+For locating a UAV. The assumed setup is a camera placed on the ground, looking up in the sky. The program will identify the UAV based on a sample image.
 
 ## Prerequisites
 The code is dependant on OpenCV. Built and tested with CMake/GCC using Atom on Ubuntu 14.04.
