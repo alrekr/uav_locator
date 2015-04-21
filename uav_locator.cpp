@@ -20,50 +20,36 @@ using namespace cv;
 using namespace std;
 
 int i, best_match;
-cv::Mat src, in;
-std::vector<std::vector<cv::Point> > received;
+Mat in;
+vector<vector<Point> > received;
 double lowest = INT_MAX, match, theta;
-std::vector<double> matches;
-std::vector<std::vector<cv::Point> > original;
-p3d _p_here;
+vector<double> matches;
+vector<vector<Point> > original;
+Point3d _p_here;
 bool set_up_complete = false;
 
-p3d locate_uav(Mat _in) {
+/*****************************************************************************
+ * Main entry point for the program.
+ * Input:  Mat, which might contain a UAV
+ * Output: Object of type Point3d with information about the found UAV
+ *****************************************************************************/
+Point3d locate_uav(Mat _in) {
     if(set_up_complete == false) {
         exit(-1);
     }
 
-    _p_here.cen_x = 0;
-    _p_here.cen_y = 0;
-    _p_here.theta = 4;
-#ifdef DEBUG
-    cout << "Loading input image" << endl;
-	_in = imread("/home/alrekr/Pictures/UAS/frame_194.png", CV_LOAD_IMAGE_GRAYSCALE);
-	cout << "Input image loaded" << endl;
-#endif //DEBUG
+    _p_here.x = 0;
+    _p_here.y = 0;
+    _p_here.z = 4;
     received = get_shapes(_in);
-#ifdef DEBUG
-	cout << "Shapes for input image received" << endl;
-	cout << "Contours in input image: " << received.size() << endl;
-#endif //DEBUG
+
     for(i = 0; i < (int)received.size(); i++) {
-#ifdef DEBUG
-		cout << "Run " << i << " in matching shapes" << endl;
-#endif //DEBUG
-/* FIXME: There's a snake in my boot! */
         matches.push_back(matchShapes(original[ORIGINAL_SHAPE], received[i], CV_CONTOURS_MATCH_I1, 0));
-#ifdef DEBUG
-		cout << "Match " << i << " completed" << endl;
-#endif //DEBUG
     }
-#ifdef DEBUG
-	cout << "Found matches, finding lowest number" << endl;
-#endif //DEBUG
+
     for(i = 0; i < (int)matches.size(); i++) {
         match = matches[i];
-#ifdef DEBUG
-        cout << "Match is " << match << endl;
-#endif //DEBUG
+
         if(lowest > match && match < MATCH_SHAPE_THRESHOLD) {
             lowest = match;
             best_match = i;
@@ -72,51 +58,31 @@ p3d locate_uav(Mat _in) {
 
     if (lowest != INT_MAX) {
         get_orientation(received, best_match, _p_here);
-        get_center(received, best_match, _p_here);
-#ifdef DEBUG
-        cout << "Angle is " << rtod(_p_here.theta) << endl;
-#endif //DEBUG
     }
-#ifdef DEBUG
-    else {
-        cout << "Best match was " << lowest << endl;
-    }
-#endif //DEBUG
-#ifdef DEBUG
-	cout << "Program is done." << endl;
-#endif //DEBUG
+
 	return _p_here;
 }
 
 /*****************************************************************************
  * Initialises some global variables
- * Input: Mat
+ * Input:  Mat
  * Output: None
  *****************************************************************************/
 void init_locate_uav(void) {
     Mat src = imread(SAMPLE_IMAGE, CV_LOAD_IMAGE_GRAYSCALE);
+
 	if(!src.data) {
-#ifdef DEBUG
-		cout << "Original image not loaded!!" << endl;
-#endif //DEBUG
+        cout << "'sample.png' not found. Exiting." << endl;
 		exit(-2);
 	}
-#ifdef DEBUG
-	else {
-		cout << "Original image loaded." << endl;
-	}
-#endif //DEBUG
+
     original = get_shapes(src);
-#ifdef DEBUG
-	cout << "Shapes in original image identified." << endl;
-	cout << "Contours in original image: " << original.size() << endl;
-#endif //DEBUG
     set_up_complete = true;
 }
 
 /*****************************************************************************
  * Prepares a Mat for thresholding.
- * Input: address to a Mat
+ * Input:  address to a Mat
  * Output: none
  *****************************************************************************/
 void prepare_mat(Mat &_src) {
@@ -130,7 +96,7 @@ void prepare_mat(Mat &_src) {
 
 /*****************************************************************************
  * Performs erosion and dilation on a Mat, to make individual contours.
- * Input: Address to a Mat
+ * Input:  Address to a Mat
  * Output: None
  *****************************************************************************/
 void erode_dilate(Mat &_src) {
@@ -144,7 +110,7 @@ void erode_dilate(Mat &_src) {
 /*****************************************************************************
  * Calls prepare_mat(), threshold(), erode_dilate(), and findContours() in
  * order to find shapes in the image.
- * Input: Mat
+ * Input:  Mat
  * Output: cds (custom struct for storing contour and hierarchy)
  *****************************************************************************/
 vector<vector<Point> > get_shapes(Mat _src) {
@@ -156,38 +122,29 @@ vector<vector<Point> > get_shapes(Mat _src) {
 	erode_dilate(_src);
 	findContours(_src, _contours, _hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-
 	return _contours;
 }
 
 /*****************************************************************************
- * Calculates the orientation of the found shape, based on the found contours.
- * Function is based on
+ * Calculates the orientation and mass center of the found shape, based on the
+ * found contours. Function is based on
  * http://stackoverflow.com/questions/14720722/binary-image-orientation
- * Input: Found contours and which contour matches with the original sample.
- * Output: Angle in radians
- *****************************************************************************/
-void get_orientation(vector<vector<Point> > _contours, int _which_one, p3d &_p) {
-	//based on
-	double _theta;
-	Moments _m = moments(_contours[_which_one], false);
-	_p.theta = 0.5 * atan2(((-2) * _m.mu11), (_m.mu20 - _m.mu02));
-}
-
-/*****************************************************************************
- * Calculates the center of the contour
- * Input: vector<Point>, address of resulting p3d
+ * Input:  Found contours
+ *         Which contour matches with the original sample
+ *         Object of type Point3d to save information to
  * Output: None
  *****************************************************************************/
-void get_center(vector<vector<Point> > _contour, int _n, p3d &_p) {
-    Moments _m = moments(_contour[_n]);
-    _p.cen_x= _m.m10/_m.m00;
-    _p.cen_y = _m.m01/_m.m00;
+void get_orientation(vector<vector<Point> > _contours, int _n, Point3d &_p) {
+	Moments _m = moments(_contours[_n], false);
+    _p.x = _m.m10/_m.m00;
+    _p.y = _m.m01/_m.m00;
+	_p.z = 0.5 * atan2(((-2) * _m.mu11), (_m.mu20 - _m.mu02));
+
 }
 
 /*****************************************************************************
  * Converts radians to degree
- * Input: double radian to convert
+ * Input:  double radian to convert
  * Output: double degree
  *****************************************************************************/
 double rtod(double _r) {
@@ -196,7 +153,7 @@ double rtod(double _r) {
 
 /*****************************************************************************
  * Converts degree to radians
- * Input: double degree to convert
+ * Input:  double degree to convert
  * Output: double radians
  *****************************************************************************/
 double dtor(double _d) {

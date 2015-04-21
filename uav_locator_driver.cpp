@@ -12,7 +12,7 @@ int main(void) {
 	Mat src = imread("test.png", CV_LOAD_IMAGE_GRAYSCALE);
 	Point3d p = locate_uav(src);
 	cout << "cen_x:  " << p.x << "\ncen_y:  " << p.y << "\ntheta:  "
-			<< p.z << "\nDegree: " << rtod(p.z) << endl;*/
+			<< p.z << "\nDegree: " << rtod(p.z) << endl;
 	cout << "Program is done." << endl;
 	return 0;
 }
