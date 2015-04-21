@@ -13,6 +13,6 @@ Tested to perform at at least 30 FPS.
 
 2.  Include uav_locator.hpp in main project.
 
-3.  Run function init_uav_locator() *before* doing anything else regarding uav_locator! The program *will* fail silently/with exit code -1!
+3.  Run function init_uav_locator() *before* doing anything else regarding uav_locator! The program *will* fail silently/with exit code -1 if you neglect to run init_uav_locator()!
 
 4.  Call uav_locator() with a Mat image as argument. The function will return an object of type cv::Point3d containing contour mass center x and y coordinates and angle in radians (-pi to pi). Repeat "ad nauseam". 
