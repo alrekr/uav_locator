@@ -20,22 +20,22 @@ using namespace cv;
 using namespace std;
 
 int i, best_match;
-Mat src, in;
-vector<vector<Point> > received;
+cv::Mat src, in;
+std::vector<std::vector<cv::Point> > received;
 double lowest = INT_MAX, match, theta;
-vector<double> matches;
-vector<vector<Point> > original;
-Point3d _p_here;
+std::vector<double> matches;
+std::vector<std::vector<cv::Point> > original;
+p3d _p_here;
 bool set_up_complete = false;
 
-Point3d locate_uav(Mat _in) {
+p3d locate_uav(Mat _in) {
     if(set_up_complete == false) {
-        init_locate_uav();
+        exit(-1);
     }
 
-    _p_here.x = 0;
-    _p_here.y = 0;
-    _p_here.z = 4;
+    _p_here.cen_x = 0;
+    _p_here.cen_y = 0;
+    _p_here.theta = 4;
 #ifdef DEBUG
     cout << "Loading input image" << endl;
 	_in = imread("/home/alrekr/Pictures/UAS/frame_194.png", CV_LOAD_IMAGE_GRAYSCALE);
@@ -72,9 +72,9 @@ Point3d locate_uav(Mat _in) {
 
     if (lowest != INT_MAX) {
         get_orientation(received, best_match, _p_here);
-        //get_center(received, best_match, _p_here);
+        get_center(received, best_match, _p_here);
 #ifdef DEBUG
-        cout << "Angle is " << rtod(_p_here.z) << endl;
+        cout << "Angle is " << rtod(_p_here.theta) << endl;
 #endif //DEBUG
     }
 #ifdef DEBUG
@@ -156,23 +156,33 @@ vector<vector<Point> > get_shapes(Mat _src) {
 	erode_dilate(_src);
 	findContours(_src, _contours, _hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
+
 	return _contours;
 }
 
 /*****************************************************************************
- * Calculates the orientation and center of the found shape, based on the
- * found contours. Function is based on
+ * Calculates the orientation of the found shape, based on the found contours.
+ * Function is based on
  * http://stackoverflow.com/questions/14720722/binary-image-orientation
- * Input: Found contours
- *        Which contour matches with the original sample
- *        Address to an object of Point3d type
- *
+ * Input: Found contours and which contour matches with the original sample.
+ * Output: Angle in radians
  *****************************************************************************/
-void get_orientation(vector<vector<Point> > _contours, int _n, Point3d &_p) {
-	Moments _m = moments(_contours[_n], false);
-    _p.x = _m.m10/_m.m00;
-    _p.y = _m.m01/_m.m00;
-	_p.z = 0.5 * atan2(((-2) * _m.mu11), (_m.mu20 - _m.mu02));
+void get_orientation(vector<vector<Point> > _contours, int _which_one, p3d &_p) {
+	//based on
+	double _theta;
+	Moments _m = moments(_contours[_which_one], false);
+	_p.theta = 0.5 * atan2(((-2) * _m.mu11), (_m.mu20 - _m.mu02));
+}
+
+/*****************************************************************************
+ * Calculates the center of the contour
+ * Input: vector<Point>, address of resulting p3d
+ * Output: None
+ *****************************************************************************/
+void get_center(vector<vector<Point> > _contour, int _n, p3d &_p) {
+    Moments _m = moments(_contour[_n]);
+    _p.cen_x= _m.m10/_m.m00;
+    _p.cen_y = _m.m01/_m.m00;
 }
 
 /*****************************************************************************
