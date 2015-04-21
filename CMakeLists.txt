@@ -4,7 +4,7 @@ find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS roscpp)
 add_definitions(-DRELEASE)
 
-add_executable(uav_locator main.cpp uav_locator.cpp)
+add_executable(uav_locator uav_locator_driver.cpp uav_locator.cpp)
 include_directories(${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 target_link_libraries(uav_locator ${OpenCV_LIBS}  ${catkin_LIBRARIES})
 set_property(TARGET uav_locator PROPERTY CXX_STANDARD 14)
