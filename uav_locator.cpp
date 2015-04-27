@@ -16,37 +16,40 @@ using std::endl;
 using std::list;
 using std::vector;
 using cv::Point;
-using cv::Point3d;
+using cv::Point2f;
 using cv::Mat;
 using cv::imread;
 using cv::Size;
 using cv::MORPH_ELLIPSE;
 using cv::Vec4i;
 using cv::Moments;
+using cv::RotatedRect;
 
-int i, best_match;
+
 vector<vector<Point> > original, received;
-double lowest = INT_MAX, match;
-vector<double> matches;
-Point3d _p;
+
 bool set_up_complete = false;
 
-Point3d locate_uav(Mat _in) {
+height_point locate_uav(Mat _in) {
     if (set_up_complete == false) {
         init_locate_uav();
     }
+    height_point _hp;
+    double lowest = INT_MAX, match;
+    vector<double> matches;
+    int best_match;
 
-    _p.x = 0;
-    _p.y = 0;
-    _p.z = 4;
+    _hp.x = 0;
+    _hp.y = 0;
+    _hp.orientation = 4;
     received = get_shapes(_in);
 
-    for (i = 0; i < static_cast<int>(received.size()); i++) {
+    for (int i = 0; i < static_cast<int>(received.size()); i++) {
         matches.push_back(matchShapes(original[ORIGINAL_SHAPE], received[i],
             CV_CONTOURS_MATCH_I1, 0));
     }
 
-    for (i = 0; i < static_cast<int>(matches.size()); i++) {
+    for (int i = 0; i < static_cast<int>(matches.size()); i++) {
         match = matches[i];
 
         if (lowest > match && match < MATCH_SHAPE_THRESHOLD) {
@@ -56,12 +59,13 @@ Point3d locate_uav(Mat _in) {
     }
 
     if (lowest != INT_MAX) {
-        get_orientation(received, best_match, _p);
+        get_orientation(received, best_match, _hp);
+        get_distance(received, best_match, _hp);
     }
 
     matches.clear();
     received.clear();
-    return _p;
+    return _hp;
 }
 
 /*****************************************************************************
@@ -132,14 +136,50 @@ vector<vector<Point> > get_shapes(Mat _src) {
  * http://stackoverflow.com/questions/14720722/binary-image-orientation
  * Input:  Found contours
  *         which contour matches with the original sample
- *         Address to object of type Point3d to hold information about contour
+ *         Address to object of type height_point to hold information about contour
  * Output: None
  *****************************************************************************/
-void get_orientation(vector<vector<Point> > _contours, int _n, Point3d &_p) {
+void get_orientation(vector<vector<Point> > _contours, int _n, height_point &_hp1) {
     Moments _m = moments(_contours[_n], false);
-    _p.x = _m.m10/_m.m00;
-    _p.y = _m.m01/_m.m00;
-    _p.z = 0.5 * atan2(((-2) * _m.mu11), (_m.mu20 - _m.mu02));
+    _hp1.x = _m.m10/_m.m00;
+    _hp1.y = _m.m01/_m.m00;
+    _hp1.orientation = 0.5 * atan2(((-2) * _m.mu11), (_m.mu20 - _m.mu02));
+}
+
+/*****************************************************************************
+ * Calculates the biggest distance of the contour
+ * Input:  vector of vector of points (contour)
+           Which vector to use
+           Address to object of type height_point
+   Output: None
+ *****************************************************************************/
+void get_distance(vector<vector<Point> > _contours, int _n, height_point &_p) {
+    double max_dist = -1, temp_dist;
+    RotatedRect min_rect;
+    Point2f points[4];
+
+    min_rect = minAreaRect(Mat(_contours[_n]));
+    min_rect.points(points);
+
+    for (int j = 0; j < 4; j++) {
+        for (int k = j; k < 4; k++) {
+            temp_dist = calc_dist(points[j], points[k]);
+            if (temp_dist > max_dist) {
+                max_dist = temp_dist;
+            }
+        }
+    }
+
+    _p.distance = max_dist;
+}
+
+/*****************************************************************************
+ * Calculates the distance between two points.
+ * Input:  Two points
+ * Output: The distance between the two points
+ *****************************************************************************/
+double calc_dist(Point p1, Point p2) {
+    return sqrt((p2.x-p1.x)*(p2.x-p1.x)+(p2.y-p1.y)*(p2.y-p1.y));
 }
 
 /*****************************************************************************
